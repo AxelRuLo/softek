@@ -25,13 +25,13 @@ def get_session() -> Generator[Session, None, None]:
 
 def create_db_and_tables() -> None:
     """Register all table models and create any missing tables."""
-    from app.client import model as client_model
-    from app.orders import model as order_model
-    from app.service import model as service_model
+    from app.client import Client
+    from app.orders import Order
+    from app.service import Service
 
     tables = [
-        client_model.Client.__table__,
-        service_model.Service.__table__,
-        order_model.Order.__table__,
+        Client.__table__,
+        Service.__table__,
+        Order.__table__,
     ]
     SQLModel.metadata.create_all(get_engine(), tables=tables)

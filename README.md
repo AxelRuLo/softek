@@ -20,9 +20,15 @@ The container listens on host port **5433** (and port 5432 inside the container)
 python -m uvicorn app.main:app --reload
 ```
 
-Visit <http://127.0.0.1:8000/docs> for the interactive API docs. `GET /health` opens a connection, runs `SELECT 1`, and returns `{"status":"ok","database":"connected"}` or HTTP 503 with a generic error if the database is unavailable. It checks **database readiness**, not just whether the API process is running. Don't use it as a liveness probe that restarts the API when PostgreSQL is unavailable. SQLModel `table=True` entities live in `app/client/model.py`, `app/service/model.py`, and `app/orders/model.py`. At startup, the API imports all three models and uses `SQLModel.metadata.create_all()` to create missing tables. PostgreSQL must be available before the API starts. **`create_all()` does not update existing tables or migrate data** when models change. No domain API routes have been added yet; order creation and snapshot immutability rules must be enforced in a later step. Don't return the Client table model directly from API routes: use a public response model without its password hash.
+Visit <http://127.0.0.1:8000/docs> for the interactive API docs. `GET /health` opens a connection, runs `SELECT 1`, and returns `{"status":"ok","database":"connected"}` or HTTP 503 with a generic error if the database is unavailable. It checks **database readiness**, not just whether the API process is running. Don't use it as a liveness probe that restarts the API when PostgreSQL is unavailable. SQLModel entities live in `app/client/model.py`, `app/service/model.py`, and `app/orders/model.py` and are exported by their packages. At startup, the API creates missing entity tables using `SQLModel.metadata.create_all()`. PostgreSQL must be available before the API starts. **`create_all()` does not update existing tables or migrate data** when models change.
 
 Each entity has UTC `created_at` and `updated_at` values managed by SQLModel/SQLAlchemy. ORM updates (including future cancellation and soft deletion) refresh `updated_at`; SQL executed outside the ORM does not. `deleted_at` stays empty until soft deletion.
+
+## CRUD endpoints
+
+**Authentication is not implemented yet. All CRUD routes are currently public; do not expose this service to an untrusted network.** Client passwords are hashed with Argon2 and are not returned in responses.
+
+Use `GET` and `POST` on `/services` and `/clients`, and `GET`, `PUT`, `PATCH`, and `DELETE` on their `/{id}` routes. `/orders` supports `GET`, `POST`, `GET /{id}`, `DELETE /{id}`, and `POST /{id}/cancel`; order snapshots cannot be edited through the API. Lists support `offset` and `limit` (default 20, maximum 100). DELETE performs a soft delete and returns 204.
 
 Check the database endpoint while the API is running:
 

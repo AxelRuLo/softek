@@ -8,9 +8,9 @@ from sqlalchemy import create_engine
 from sqlalchemy.exc import IntegrityError
 from sqlmodel import SQLModel, Session
 
-from app.client.model import Client
-from app.orders.model import Order
-from app.service.model import Service
+from app.client import Client
+from app.orders import Order
+from app.service import Service
 from app.timestamps import utc_now
 
 

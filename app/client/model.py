@@ -1,5 +1,3 @@
-"""Client table and active-email uniqueness rule."""
-
 from datetime import datetime
 from typing import Annotated
 from uuid import UUID, uuid4
