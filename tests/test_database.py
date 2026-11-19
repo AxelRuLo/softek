@@ -1,9 +1,9 @@
 import os
 
 import pytest
-from sqlalchemy import text
+from sqlalchemy import create_engine, inspect, text
 
-from app.database import get_engine
+from app.database import create_db_and_tables, get_engine
 
 
 def test_engine_uses_postgres_without_connecting(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -17,6 +17,19 @@ def test_engine_uses_postgres_without_connecting(monkeypatch: pytest.MonkeyPatch
     finally:
         engine.dispose()
         get_engine.cache_clear()
+
+
+def test_create_db_and_tables_is_repeatable(monkeypatch: pytest.MonkeyPatch) -> None:
+    engine = create_engine("sqlite+pysqlite:///:memory:")
+    monkeypatch.setattr("app.database.get_engine", lambda: engine)
+    try:
+        create_db_and_tables()
+        create_db_and_tables()
+        assert {"clients", "services", "orders"}.issubset(
+            inspect(engine).get_table_names()
+        )
+    finally:
+        engine.dispose()
 
 
 @pytest.mark.integration

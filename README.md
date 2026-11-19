@@ -1,6 +1,6 @@
 # REST API starter
 
-Python 3.12 + FastAPI + PostgreSQL + SQLAlchemy 2.x + pytest.
+Python 3.12 + FastAPI + PostgreSQL + SQLModel (Pydantic + SQLAlchemy) + pytest.
 
 ## Local setup
 
@@ -20,7 +20,15 @@ The container listens on host port **5433** (and port 5432 inside the container)
 python -m uvicorn app.main:app --reload
 ```
 
-Visit <http://127.0.0.1:8000/docs> for the interactive API docs or <http://127.0.0.1:8000/health> for a liveness check. `/health` intentionally does **not** check PostgreSQL. Import `Base` for future ORM models and `get_session` from `app.database` as a FastAPI dependency in future database-backed routes; sessions are closed after each request. Database connections are created only when first needed. No tables or migrations are created yet; add those when the data model is defined.
+Visit <http://127.0.0.1:8000/docs> for the interactive API docs. `GET /health` opens a connection, runs `SELECT 1`, and returns `{"status":"ok","database":"connected"}` or HTTP 503 with a generic error if the database is unavailable. It checks **database readiness**, not just whether the API process is running. Don't use it as a liveness probe that restarts the API when PostgreSQL is unavailable. SQLModel `table=True` entities live in `app/client/model.py`, `app/service/model.py`, and `app/orders/model.py`. At startup, the API imports all three models and uses `SQLModel.metadata.create_all()` to create missing tables. PostgreSQL must be available before the API starts. **`create_all()` does not update existing tables or migrate data** when models change. No domain API routes have been added yet; order creation and snapshot immutability rules must be enforced in a later step. Don't return the Client table model directly from API routes: use a public response model without its password hash.
+
+Each entity has UTC `created_at` and `updated_at` values managed by SQLModel/SQLAlchemy. ORM updates (including future cancellation and soft deletion) refresh `updated_at`; SQL executed outside the ORM does not. `deleted_at` stays empty until soft deletion.
+
+Check the database endpoint while the API is running:
+
+```bash
+curl -i http://127.0.0.1:8000/health
+```
 
 ## Tests
 
@@ -35,7 +43,3 @@ RUN_DB_TESTS=1 python -m pytest
 ```
 
 Stop the local database with `docker compose down` (add `-v` **only** if you want to delete its data).
-
-## Git and GitHub
-
-This directory is initialized as a **local Git repository**. A GitHub repository and remote must be created separately with your GitHub account before pushing; don't commit `.env` or `.venv/`.
