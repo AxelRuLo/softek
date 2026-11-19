@@ -1,0 +1,91 @@
+{
+  "info": {
+    "name": "SOFTEK API — manual requests",
+    "description": "# README\n\nImport this collection into Postman and start the API with its database configured. Set base_url if the server is elsewhere. CRUD and reports are public; no authentication is configured in this collection.\n\nRun requests individually: create a client and a service first, then create an order. Successful creation responses with a valid UUID id populate the corresponding collection variable; you may also enter existing IDs manually. A failed or malformed response leaves the previous ID intact, so check the response and variables before continuing. Edit the sample email and service name when needed to avoid uniqueness conflicts, and replace the sample password with a disposable value. Prices are integer cents.\n\nUse list/get and update requests as needed. Order updates are limited to cancellation; the API has no PUT/PATCH order endpoint. Cancellation and DELETE requests change data and run only when explicitly sent; run them after inspecting reports if you want the order included. Deletes are soft deletes.\n\nHistorical sales reports exclude cancelled and soft-deleted orders. They retain order-time service and price snapshots and include soft-deleted clients with their current names. Recent sales returns up to 10 orders; sales by client supports offset and limit pagination.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {"key": "base_url", "value": "http://127.0.0.1:8000"},
+    {"key": "client_id", "value": ""},
+    {"key": "service_id", "value": ""},
+    {"key": "order_id", "value": ""}
+  ],
+  "item": [
+    {
+      "name": "Health",
+      "request": {"method": "GET", "url": "{{base_url}}/health", "description": "Checks database connectivity."}
+    },
+    {
+      "name": "Clients",
+      "item": [
+        {
+          "name": "Create client",
+          "event": [{"listen": "test", "script": {"type": "text/javascript", "exec": [
+            "if (pm.response.code >= 200 && pm.response.code < 300) {",
+            "  try {",
+            "    const body = pm.response.json();",
+            "    if (body && typeof body.id === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(body.id)) pm.collectionVariables.set('client_id', body.id);",
+            "  } catch (e) { console.warn('Client response was not valid JSON'); }",
+            "}"
+          ]}}],
+          "request": {"method": "POST", "header": [{"key": "Content-Type", "value": "application/json"}], "url": "{{base_url}}/clients", "body": {"mode": "raw", "raw": "{\n  \"name\": \"Example Client\",\n  \"email\": \"client@example.com\",\n  \"password\": \"replace-with-disposable-password\"\n}"}}
+        },
+        {"name": "List clients", "request": {"method": "GET", "url": "{{base_url}}/clients?offset=0&limit=20"}},
+        {"name": "Get client", "request": {"method": "GET", "url": "{{base_url}}/clients/{{client_id}}"}},
+        {"name": "Replace client", "request": {"method": "PUT", "header": [{"key": "Content-Type", "value": "application/json"}], "url": "{{base_url}}/clients/{{client_id}}", "body": {"mode": "raw", "raw": "{\n  \"name\": \"Updated Client\",\n  \"email\": \"client@example.com\",\n  \"password\": \"replace-with-disposable-password\"\n}"}}},
+        {"name": "Update client", "request": {"method": "PATCH", "header": [{"key": "Content-Type", "value": "application/json"}], "url": "{{base_url}}/clients/{{client_id}}", "body": {"mode": "raw", "raw": "{\n  \"name\": \"Updated Client\"\n}"}}},
+        {"name": "Delete client", "request": {"method": "DELETE", "url": "{{base_url}}/clients/{{client_id}}", "description": "Soft-deletes the selected client."}}
+      ]
+    },
+    {
+      "name": "Services",
+      "item": [
+        {
+          "name": "Create service",
+          "event": [{"listen": "test", "script": {"type": "text/javascript", "exec": [
+            "if (pm.response.code >= 200 && pm.response.code < 300) {",
+            "  try {",
+            "    const body = pm.response.json();",
+            "    if (body && typeof body.id === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(body.id)) pm.collectionVariables.set('service_id', body.id);",
+            "  } catch (e) { console.warn('Service response was not valid JSON'); }",
+            "}"
+          ]}}],
+          "request": {"method": "POST", "header": [{"key": "Content-Type", "value": "application/json"}], "url": "{{base_url}}/services", "body": {"mode": "raw", "raw": "{\n  \"name\": \"Example Service\",\n  \"description\": \"Sample service\",\n  \"suggested_price\": 12500\n}"}}
+        },
+        {"name": "List services", "request": {"method": "GET", "url": "{{base_url}}/services?offset=0&limit=20"}},
+        {"name": "Get service", "request": {"method": "GET", "url": "{{base_url}}/services/{{service_id}}"}},
+        {"name": "Replace service", "request": {"method": "PUT", "header": [{"key": "Content-Type", "value": "application/json"}], "url": "{{base_url}}/services/{{service_id}}", "body": {"mode": "raw", "raw": "{\n  \"name\": \"Example Service\",\n  \"description\": \"Updated service\",\n  \"suggested_price\": 15000\n}"}}},
+        {"name": "Update service", "request": {"method": "PATCH", "header": [{"key": "Content-Type", "value": "application/json"}], "url": "{{base_url}}/services/{{service_id}}", "body": {"mode": "raw", "raw": "{\n  \"suggested_price\": 15000\n}"}}},
+        {"name": "Delete service", "request": {"method": "DELETE", "url": "{{base_url}}/services/{{service_id}}", "description": "Soft-deletes the selected service."}}
+      ]
+    },
+    {
+      "name": "Orders",
+      "item": [
+        {
+          "name": "Create order",
+          "event": [{"listen": "test", "script": {"type": "text/javascript", "exec": [
+            "if (pm.response.code >= 200 && pm.response.code < 300) {",
+            "  try {",
+            "    const body = pm.response.json();",
+            "    if (body && typeof body.id === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(body.id)) pm.collectionVariables.set('order_id', body.id);",
+            "  } catch (e) { console.warn('Order response was not valid JSON'); }",
+            "}"
+          ]}}],
+          "request": {"method": "POST", "header": [{"key": "Content-Type", "value": "application/json"}], "url": "{{base_url}}/orders", "body": {"mode": "raw", "raw": "{\n  \"client_id\": \"{{client_id}}\",\n  \"service_id\": \"{{service_id}}\"\n}"}}
+        },
+        {"name": "List orders", "request": {"method": "GET", "url": "{{base_url}}/orders?offset=0&limit=20"}},
+        {"name": "Get order", "request": {"method": "GET", "url": "{{base_url}}/orders/{{order_id}}"}},
+        {"name": "Cancel order", "request": {"method": "POST", "url": "{{base_url}}/orders/{{order_id}}/cancel", "description": "Cancels the selected order; repeated cancellation returns a conflict."}},
+        {"name": "Delete order", "request": {"method": "DELETE", "url": "{{base_url}}/orders/{{order_id}}", "description": "Soft-deletes the selected order."}}
+      ]
+    },
+    {
+      "name": "Sales reports",
+      "item": [
+        {"name": "Recent sales", "request": {"method": "GET", "url": "{{base_url}}/reports/sales/recent"}},
+        {"name": "Sales by client", "request": {"method": "GET", "url": "{{base_url}}/reports/sales/by-client?offset=0&limit=20"}}
+      ]
+    }
+  ]
+}

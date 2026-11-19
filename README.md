@@ -37,6 +37,10 @@ Use `GET` and `POST` on `/services` and `/clients`, and `GET`, `PUT`, `PATCH`, a
 
 Both reports retain sales belonging to soft-deleted clients. Amounts are integers in cents.
 
+### Postman collection
+
+Import `postman_collection.json` into Postman and set the `base_url` collection variable if needed. Create a client and a service before creating an order; successful creation responses save their IDs as collection variables. A failed request leaves the previous ID unchanged, so check the selected IDs before updating, cancelling, or deleting. These manual requests modify the configured database; use a disposable development database and sample credentials.
+
 Check the database endpoint while the API is running:
 
 ```bash
@@ -54,5 +58,41 @@ The normal test run does not require a running database. To also check a real Po
 ```bash
 RUN_DB_TESTS=1 python -m pytest
 ```
+
+The functional sales workflow can be run separately with `python -m pytest -q tests/test_functional.py`. It exercises valid and invalid creation requests and both reports using an isolated in-memory SQLite database; it does not write to PostgreSQL. The optional PostgreSQL checks above verify connectivity, not the complete functional workflow on PostgreSQL.
+
+### Test map
+
+```text
+tests/
+|
+|-- test_database.py
+|   |-- PostgreSQL engine configuration without connecting
+|   |-- Repeatable table creation                       [SQLite]
+|   `-- PostgreSQL connection with SELECT 1             [PostgreSQL*]
+|
+|-- test_main.py
+|   |-- Startup initialization and failure               [mock]
+|   |-- Removed /health/db route returns 404
+|   |-- /health succeeds                                 [SQLite]
+|   |-- /health failures return 503                       [mock]
+|   `-- /health succeeds against PostgreSQL              [PostgreSQL*]
+|
+|-- test_models.py                                      [SQLite]
+|   |-- UUIDs, initial order status and UTC timestamps
+|   |-- Validation, password-hash exclusion and constraints
+|   |-- Active uniqueness and reuse after soft deletion
+|   `-- Order snapshot remains unchanged
+|
+`-- test_functional.py                                  [SQLite]
+    `-- Sales workflow
+        |-- Valid, invalid and duplicate client creation
+        |-- Valid, invalid and duplicate service creation
+        |-- Valid and invalid order creation
+        |-- Snapshot, cancellation and soft deletion
+        `-- Sales reports, filters, ordering and pagination
+```
+
+`[PostgreSQL*]` tests run only with `RUN_DB_TESTS=1`. This flag does **not** switch the SQLite tests to PostgreSQL.
 
 Stop the local database with `docker compose down` (add `-v` **only** if you want to delete its data).
