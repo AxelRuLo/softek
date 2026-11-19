@@ -30,6 +30,13 @@ Each entity has UTC `created_at` and `updated_at` values managed by SQLModel/SQL
 
 Use `GET` and `POST` on `/services` and `/clients`, and `GET`, `PUT`, `PATCH`, and `DELETE` on their `/{id}` routes. `/orders` supports `GET`, `POST`, `GET /{id}`, `DELETE /{id}`, and `POST /{id}/cancel`; order snapshots cannot be edited through the API. Lists support `offset` and `limit` (default 20, maximum 100). DELETE performs a soft delete and returns 204.
 
+### Sales reports
+
+- `GET /reports/sales/recent`: up to ten most recent non-cancelled, non-deleted orders. Includes the client's current name and the service description and price captured on the order.
+- `GET /reports/sales/by-client`: order count and total cents per client, ordered by total descending. Supports `offset` and `limit` (default 20, maximum 100).
+
+Both reports retain sales belonging to soft-deleted clients. Amounts are integers in cents.
+
 Check the database endpoint while the API is running:
 
 ```bash

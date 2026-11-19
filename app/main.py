@@ -8,6 +8,7 @@ from sqlalchemy.exc import SQLAlchemyError
 from app.database import create_db_and_tables, get_engine
 from app.client.router import router as client_router
 from app.orders.router import router as orders_router
+from app.reports.router import router as reports_router
 from app.service.router import router as service_router
 
 
@@ -21,6 +22,7 @@ app = FastAPI(title="REST API SOFTEK", lifespan=lifespan)
 app.include_router(client_router)
 app.include_router(service_router)
 app.include_router(orders_router)
+app.include_router(reports_router)
 
 
 @app.get("/health")
